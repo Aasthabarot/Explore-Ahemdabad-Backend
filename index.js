@@ -13,8 +13,8 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 8001
 const corsOptions = {
-   origin: true,
-   credentials: true
+   origin: "http://localhost:3000",
+      credentials: true
 }
 
 mongoose.set("strictQuery", false)
@@ -31,14 +31,16 @@ const connect = async() => {
    }
 }
 
-app.use(express.json())
-app.use(cors(corsOptions))
-app.use(cookieParser())
-app.use("/api/v1/auth", authRoute)
-app.use("/api/v1/tours", tourRoute)
-app.use("/api/v1/users", userRoute)
-app.use("/api/v1/review", reviewRoute)
-app.use("/api/v1/booking", bookingRoute)
+app.use(express.json()); // Must be placed before routes
+app.use(cors(corsOptions));
+app.use(cookieParser());
+
+// Routes
+app.use("/api/v1/auth", authRoute);
+app.use("/api/v1/tours", tourRoute);
+app.use("/api/v1/users", userRoute);
+app.use("/api/v1/review", reviewRoute);
+app.use("/api/v1/booking", bookingRoute);
 
 app.listen(port, () => {
    connect()

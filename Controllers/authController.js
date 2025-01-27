@@ -55,69 +55,69 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
    res.send(req.body)
 
-   // try {
-   //    const { email, password } = req.body;
+   try {
+      const { email, password } = req.body;
 
-   //    if (!email || !password) {
-   //       return res.status(400).json({
-   //          success: false,
-   //          message: "Email and password are required."
-   //       });
-   //    }
+      if (!email || !password) {
+         return res.status(400).json({
+            success: false,
+            message: "Email and password are required."
+         });
+      }
 
-   //    console.log("Looking for user with email:", email);
-   //    // Fetch user by email
-   //    const user = await User.findOne({ email });
+      console.log("Looking for user with email:", email);
+      // Fetch user by email
+      const user = await User.findOne({ email });
 
-   //    // Log the user object to check if the query fetched the user
-   //    console.log("User found in DB:", user); // Check if user is fetched properly
+      // Log the user object to check if the query fetched the user
+      console.log("User found in DB:", user); // Check if user is fetched properly
 
-   //    if (!user) {
-   //       return res.status(404).json({
-   //          success: false,
-   //          message: "User not found!"
-   //       });
-   //    }
+      if (!user) {
+         return res.status(404).json({
+            success: false,
+            message: "User not found!"
+         });
+      }
 
-   //    console.log("User found:", user);
-   //    const checkCorrectPassword = await bcrypt.compare(password, user.password);
+      console.log("User found:", user);
+      const checkCorrectPassword = await bcrypt.compare(password, user.password);
 
-   //    console.log("Password comparison result:", checkCorrectPassword);
+      console.log("Password comparison result:", checkCorrectPassword);
 
-   //    if (!checkCorrectPassword) {
-   //       return res.status(401).json({
-   //          success: false,
-   //          message: "Incorrect email or password!"
-   //       });
-   //    }
+      if (!checkCorrectPassword) {
+         return res.status(401).json({
+            success: false,
+            message: "Incorrect email or password!"
+         });
+      }
 
-   //    const { password: userPassword, role, ...rest } = user._doc;
+      const { password: userPassword, role, ...rest } = user._doc;
 
-   //    const token = jwt.sign(
-   //       { id: user._id, role: user.role },
-   //       process.env.JWT_SECRET_KEY,
-   //       { expiresIn: "15d" }
-   //    );
-   //    console.log("JWT Secret Key:", process.env.JWT_SECRET_KEY);
+      const token = jwt.sign(
+         { id: user._id, role: user.role },
+         process.env.JWT_SECRET_KEY,
+         { expiresIn: "15d" }
+      );
+      console.log("JWT Secret Key:", process.env.JWT_SECRET_KEY);
 
 
-   //    res.cookie("accessToken", token, {
-   //       httpOnly: true,
-   //       expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
-   //    }).status(200).json({
-   //       success: true,
-   //       token,
-   //       data: { ...rest },
-   //       role
-   //    });
-   // } catch (error) {
-   //    console.error("Error during login:", error); // This will print the actual error to the console
-   //    res.status(500).json({
-   //       success: false,
-   //       message: "Failed to login. Please try again later.",
-   //       error: error.message // Add error message for debugging
-   //    });
-   // }
+      res.cookie("accessToken", token, {
+         httpOnly: true,
+         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
+      }).status(200).json({
+         success: true,
+         token,
+         data: { ...rest },
+         role
+      });
+   } catch (error) {
+      console.error("Error during login:", error); // This will print the actual error to the console
+      res.status(500).json({
+         success: false,
+         message: "Failed to login. Please try again later.",
+         error: error.message // Add error message for debugging
+      });
+   }
 };
 
 

@@ -1,8 +1,7 @@
 import User from "../models/User.js";
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
-// Define the base URL from environment variables
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 
 // User register
@@ -19,15 +18,24 @@ export const register = async (req, res) => {
          });
       }
 
+      // Check if the user already exists
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+         return res.status(400).json({
+            success: false,
+            message: "User with this email already exists."
+         });
+      }
+
       // Hash the password
       const salt = bcrypt.genSaltSync(10);
-      const hash = bcrypt.hashSync(password, salt);
+      const hashedPassword = bcrypt.hashSync(password, salt);
 
       // Create a new user object
       const newUser = new User({
          name,
          email,
-         password: hash,
+         password: hashedPassword,
          contact,
       });
 
@@ -35,20 +43,25 @@ export const register = async (req, res) => {
       await newUser.save();
 
       // Respond with success
-      res.status(200).json({
+      res.status(201).json({
          success: true,
          message: "User successfully created!",
-         baseUrl: `${BASE_URL}/register`
+         baseUrl: `${BASE_URL}/register`,
+         user: {
+            id: newUser._id,
+            name: newUser.name,
+            email: newUser.email,
+         }
       });
    } catch (error) {
-      console.error("Error creating user:", error); // Log the error for debugging
+      console.error("Error during registration:", error.message); // Log the error for debugging
       res.status(500).json({
          success: false,
-         message: "Failed to create user. Try again.",
-         baseUrl: `${BASE_URL}/register`
+         message: "Failed to register user. Please try again later.",
       });
    }
 };
+
 
 
 // User login

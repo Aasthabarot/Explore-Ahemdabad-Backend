@@ -13,9 +13,10 @@ dotenv.config()
 const app = express()
 const port = process.env.PORT || 8001
 const corsOptions = {
-   origin: "http://localhost:3000",
-      credentials: true
-}
+   origin: "*", // Allows all origins
+   credentials: true // Enable credentials
+};
+
 
 mongoose.set("strictQuery", false)
 const connect = async() => {

@@ -9,13 +9,22 @@ import authRoute from './routes/auth.js'
 import reviewRoute from './routes/reviews.js'
 import bookingRoute from './routes/bookings.js'
 
+// dotenv.config()
+// const app = express()
+// const port = process.env.PORT || 8001
+// const corsOptions = {
+//    origin: "*", // Allows all origins
+//    credentials: true // Enable credentials
+// };
+
 dotenv.config()
 const app = express()
-const port = process.env.PORT || 8001
+const port = process.env.PORT || 8000
 const corsOptions = {
-   origin: "*", // Allows all origins
-   credentials: true // Enable credentials
-};
+   origin: "http://localhost:3000/",
+   credentials: true
+}
+
 
 
 mongoose.set("strictQuery", false)

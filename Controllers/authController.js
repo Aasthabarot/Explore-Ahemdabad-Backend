@@ -64,11 +64,12 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 // };
 
 
+
 export const register = async (req, res) => {
    try {
       console.log("Received data:", req.body); // Debugging step
 
-      const { name, email, password, contact } = req.body;
+      const { name, email, password, contact, username } = req.body;
 
       if (!name || !email || !password || !contact) {
          return res.status(400).json({
@@ -76,8 +77,8 @@ export const register = async (req, res) => {
             message: "All fields (name, email, password, contact) are required.",
          });
       }
-      
 
+      // Check if email already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
          return res.status(400).json({
@@ -86,16 +87,32 @@ export const register = async (req, res) => {
          });
       }
 
+      // Generate a username if not provided
+      const finalUsername = username || email.split("@")[0];
+
+      // Check if username already exists
+      const existingUsername = await User.findOne({ username: finalUsername });
+      if (existingUsername) {
+         return res.status(400).json({
+            success: false,
+            message: "Username already taken. Please choose another one.",
+         });
+      }
+
+      // Hash the password
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
 
+      // Create new user
       const newUser = new User({
          name,
          email,
+         username: finalUsername,
          password: hashedPassword,
          contact,
       });
 
+      // Save user to the database
       await newUser.save();
 
       res.status(201).json({
@@ -103,7 +120,7 @@ export const register = async (req, res) => {
          message: "User successfully created!",
          user: {
             id: newUser._id,
-            userName: newUser.userName,
+            username: newUser.username,
             email: newUser.email,
          },
       });
@@ -112,6 +129,7 @@ export const register = async (req, res) => {
       res.status(500).json({
          success: false,
          message: "Failed to register user. Please try again later.",
+         error: error.message, // Send error for debugging
       });
    }
 };

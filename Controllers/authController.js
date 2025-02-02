@@ -5,33 +5,95 @@ import jwt from "jsonwebtoken";
 const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 
 // User register
+// export const register = async (req, res) => {
+//    try {
+//       // Destructure the data from the request body
+//       const { name, email, password, contact } = req.body;
+
+//       // Validate required fields
+//       if (!name || !email || !password || !contact) {
+//          return res.status(400).json({
+//             success: false,
+//             message: "All fields (name, email, password, contact) are required."
+//          });
+//       }
+
+//       // Check if the user already exists
+//       const existingUser = await User.findOne({ email });
+//       if (existingUser) {
+//          return res.status(400).json({
+//             success: false,
+//             message: "User with this email already exists."
+//          });
+//       }
+
+//       // Hash the password
+//       const salt = bcrypt.genSaltSync(10);
+//       const hashedPassword = bcrypt.hashSync(password, salt);
+
+//       // Create a new user object
+//       const newUser = new User({
+//          name,
+//          email,
+//          password: hashedPassword,
+//          contact,
+//       });
+
+//       // Save the new user to the database
+//       await newUser.save();
+
+//       // Respond with success
+//       res.status(201).json({
+//          success: true,
+//          message: "User successfully created!",
+//          baseUrl: `${BASE_URL}/register`,
+//          user: {
+//             id: newUser._id,
+//             name: newUser.name,
+//             email: newUser.email,
+//             contact: newUser.contact,
+//          }
+//       });
+//    } catch (error) {
+//       console.error("Error during registration:", error.message); // Log the error for debugging
+//       res.status(500).json({
+//          success: false,
+//          message: "Failed to register user. Please try again later.",
+//       });
+//    }
+// };
+
+
 export const register = async (req, res) => {
    try {
-      // Destructure the data from the request body
+      console.log("Received data:", req.body); // ✅ Debug incoming data
+
       const { name, email, password, contact } = req.body;
 
-      // Validate required fields
+      // ✅ Check if all fields exist
       if (!name || !email || !password || !contact) {
+         console.log("Missing fields"); // Debugging
          return res.status(400).json({
             success: false,
             message: "All fields (name, email, password, contact) are required."
          });
       }
 
-      // Check if the user already exists
+      // ✅ Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
+         console.log("User already exists"); // Debugging
          return res.status(400).json({
             success: false,
             message: "User with this email already exists."
          });
       }
 
-      // Hash the password
+      // ✅ Hash password
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
 
-      // Create a new user object
+      // ✅ Create user
       const newUser = new User({
          name,
          email,
@@ -39,25 +101,27 @@ export const register = async (req, res) => {
          contact,
       });
 
-      // Save the new user to the database
-      await newUser.save();
+      // ✅ Save to DB
+      const savedUser = await newUser.save();
+      console.log("User saved:", savedUser);
 
-      // Respond with success
       res.status(201).json({
          success: true,
-         message: "User successfully created!",
-         baseUrl: `${BASE_URL}/register`,
+         message: "User successfully registered!",
          user: {
-            id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
+            id: savedUser._id,
+            name: savedUser.name,
+            email: savedUser.email,
+            contact: savedUser.contact,
          }
       });
+
    } catch (error) {
-      console.error("Error during registration:", error.message); // Log the error for debugging
+      console.error("Registration Error:", error.message); // ✅ Log actual error
       res.status(500).json({
          success: false,
          message: "Failed to register user. Please try again later.",
+         error: error.message, // Add error details for debugging
       });
    }
 };

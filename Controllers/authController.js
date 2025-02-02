@@ -66,34 +66,29 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 
 export const register = async (req, res) => {
    try {
-      console.log("Received data:", req.body); // ✅ Debug incoming data
+      console.log("Received data:", req.body); // Debugging step
 
       const { name, email, password, contact } = req.body;
 
-      // ✅ Check if all fields exist
       if (!name || !email || !password || !contact) {
-         console.log("Missing fields"); // Debugging
          return res.status(400).json({
             success: false,
-            message: "All fields (name, email, password, contact) are required."
+            message: "All fields (name, email, password, contact) are required.",
          });
       }
+      
 
-      // ✅ Check if user already exists
       const existingUser = await User.findOne({ email });
       if (existingUser) {
-         console.log("User already exists"); // Debugging
          return res.status(400).json({
             success: false,
-            message: "User with this email already exists."
+            message: "User with this email already exists.",
          });
       }
 
-      // ✅ Hash password
       const salt = bcrypt.genSaltSync(10);
       const hashedPassword = bcrypt.hashSync(password, salt);
 
-      // ✅ Create user
       const newUser = new User({
          name,
          email,
@@ -101,31 +96,25 @@ export const register = async (req, res) => {
          contact,
       });
 
-      // ✅ Save to DB
-      const savedUser = await newUser.save();
-      console.log("User saved:", savedUser);
+      await newUser.save();
 
       res.status(201).json({
          success: true,
-         message: "User successfully registered!",
+         message: "User successfully created!",
          user: {
-            id: savedUser._id,
-            name: savedUser.name,
-            email: savedUser.email,
-            contact: savedUser.contact,
-         }
+            id: newUser._id,
+            userName: newUser.userName,
+            email: newUser.email,
+         },
       });
-
    } catch (error) {
-      console.error("Registration Error:", error.message); // ✅ Log actual error
+      console.error("Error during registration:", error.message);
       res.status(500).json({
          success: false,
          message: "Failed to register user. Please try again later.",
-         error: error.message, // Add error details for debugging
       });
    }
 };
-
 
 
 // User login

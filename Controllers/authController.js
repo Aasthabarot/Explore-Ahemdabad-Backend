@@ -67,16 +67,16 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 
 export const register = async (req, res) => {
    try {
-      console.log("Received data:", req.body); // Debugging step
+      console.log("Received datasss:", req.body); // Debugging step
 
       const { name, email, password, contact, username } = req.body;
 
-      if (!name || !email || !password || !contact) {
-         return res.status(400).json({
-            success: false,
-            message: "All fields (name, email, password, contact) are required.",
-         });
-      }
+      // if (!name || !email || !password || !contact) {
+      //    return res.status(400).json({
+      //       success: false,
+      //       message: "All fields (name, email, password, contact) are required.",
+      //    });
+      // }
 
       // Check if email already exists
       const existingUser = await User.findOne({ email });
@@ -91,13 +91,13 @@ export const register = async (req, res) => {
       const finalUsername = username || email.split("@")[0];
 
       // Check if username already exists
-      const existingUsername = await User.findOne({ username: finalUsername });
-      if (existingUsername) {
-         return res.status(400).json({
-            success: false,
-            message: "Username already taken. Please choose another one.",
-         });
-      }
+      // const existingUsername = await User.findOne({ username: finalUsername });
+      // if (existingUsername) {
+      //    return res.status(400).json({
+      //       success: false,
+      //       message: "Username already taken. Please choose another one.",
+      //    });
+      // }
 
       // Hash the password
       const salt = bcrypt.genSaltSync(10);
@@ -114,7 +114,7 @@ export const register = async (req, res) => {
 
       // Save user to the database
       await newUser.save();
-
+      console.log("newUser: ", newUser);
       res.status(201).json({
          success: true,
          message: "User successfully created!",

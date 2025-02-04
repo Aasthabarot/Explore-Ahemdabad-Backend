@@ -86,7 +86,8 @@ const port = process.env.PORT || 8000;
 
 // ✅ Fixed CORS Configuration
 const corsOptions = {
-   origin: ["http://localhost:3000", "https://explore-ahemdabad-8qak.vercel.app"], // No trailing slash
+   origin: ["http://localhost:3000", "http://localhost:3001", "https://explore-ahemdabad-8qak.vercel.app"], // No trailing slash
+   // origin: '*',
    credentials: true,
    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
    allowedHeaders: "Content-Type,Authorization",

@@ -1,4 +1,4 @@
-            import User from "../models/User.js";
+import User from "../models/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
@@ -137,8 +137,6 @@ export const register = async (req, res) => {
 
 // User login
 export const login = async (req, res) => {
-   res.send(req.body)
-
    try {
       const { email, password } = req.body;
 
@@ -150,11 +148,7 @@ export const login = async (req, res) => {
       }
 
       console.log("Looking for user with email:", email);
-      // Fetch user by email
       const user = await User.findOne({ email });
-
-      // Log the user object to check if the query fetched the user
-      console.log("User found in DB:", user); // Check if user is fetched properly
 
       if (!user) {
          return res.status(404).json({
@@ -163,11 +157,10 @@ export const login = async (req, res) => {
          });
       }
 
-      console.log("User found:", user);
+      console.log("User found in DB:", user);
+
+      // Verify password
       const checkCorrectPassword = await bcrypt.compare(password, user.password);
-
-      console.log("Password comparison result:", checkCorrectPassword);
-
       if (!checkCorrectPassword) {
          return res.status(401).json({
             success: false,
@@ -175,35 +168,25 @@ export const login = async (req, res) => {
          });
       }
 
+      // Destructure user object to exclude password
       const { password: userPassword, role, ...rest } = user._doc;
 
-      const token = jwt.sign(
-         { id: user._id, role: user.role },
-         process.env.JWT_SECRET_KEY,
-         { expiresIn: "15d" }
-      );
-      console.log("JWT Secret Key:", process.env.JWT_SECRET_KEY);
-
-
-      res.cookie("accessToken", token, {
-         httpOnly: true,
-         expires: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
-      }).status(200).json({
+      // Send response without token
+      res.status(200).json({
          success: true,
-         token,
-         data: { ...rest },
+         user: { ...rest },
          role
       });
+
    } catch (error) {
-      console.error("Error during login:", error); // This will print the actual error to the console
+      console.error("Error during login:", error);
       res.status(500).json({
          success: false,
          message: "Failed to login. Please try again later.",
-         error: error.message // Add error message for debugging
+         error: error.message
       });
    }
 };
-
 
 
 

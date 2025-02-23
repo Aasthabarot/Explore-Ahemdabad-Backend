@@ -1,21 +1,18 @@
-import express from 'express'
-import { deleteUser, getAllUser, getSingleUser, updateUser } from '../Controllers/userController.js'
+import express from 'express';
+import { deleteUser, getAllUser, getSingleUser, updateUser } from '../Controllers/userController.js';
 
-import { verifyAdmin, verifyUser } from '../utils/verifyToken.js'
+const router = express.Router();
 
-const router = express.Router()
+// Update user (No JWT verification)
+router.put('/:id', updateUser);
 
-//Update user
-router.put('/:id', verifyUser, updateUser)
+// Delete user (No JWT verification)
+router.delete('/:id', deleteUser);
 
-//Delete user
-router.delete('/:id', verifyUser, deleteUser)
+// Get single user (No JWT verification)
+router.get('/:id', getSingleUser);
 
-//Get single user
-router.get('/:id', verifyUser, getSingleUser)
+// Get all users (No JWT verification)
+router.get('/', getAllUser);
 
-//Get all user
-router.get('/', verifyAdmin, getAllUser)
-
-
-export default router
+export default router;

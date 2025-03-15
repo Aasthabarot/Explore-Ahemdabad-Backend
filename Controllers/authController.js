@@ -67,16 +67,16 @@ const BASE_URL = process.env.BASE_URL || "http://localhost:5000/api";
 
 export const register = async (req, res) => {
    try {
-      console.log("Received datasss:", req.body); // Debugging step
+      console.log("Received data:", req.body); // Debugging step
 
       const { name, email, password, contact, username } = req.body;
 
-      // if (!name || !email || !password || !contact) {
-      //    return res.status(400).json({
-      //       success: false,
-      //       message: "All fields (name, email, password, contact) are required.",
-      //    });
-      // }
+      if (!name || !email || !password || !contact) {
+         return res.status(400).json({
+            success: false,
+            message: "All fields (name, email, password, contact) are required.",
+         });
+      }
 
       // Check if email already exists
       const existingUser = await User.findOne({ email });
@@ -91,13 +91,13 @@ export const register = async (req, res) => {
       const finalUsername = username || email.split("@")[0];
 
       // Check if username already exists
-      // const existingUsername = await User.findOne({ username: finalUsername });
-      // if (existingUsername) {
-      //    return res.status(400).json({
-      //       success: false,
-      //       message: "Username already taken. Please choose another one.",
-      //    });
-      // }
+      const existingUsername = await User.findOne({ username: finalUsername });
+      if (existingUsername) {
+         return res.status(400).json({
+            success: false,
+            message: "Username already taken. Please choose another one.",
+         });
+      }
 
       // Hash the password
       const salt = bcrypt.genSaltSync(10);
@@ -114,7 +114,7 @@ export const register = async (req, res) => {
 
       // Save user to the database
       await newUser.save();
-      console.log("newUser: ", newUser);
+      console.log("New User:", newUser);
       res.status(201).json({
          success: true,
          message: "User successfully created!",
@@ -147,7 +147,19 @@ export const login = async (req, res) => {
          });
       }
 
-      console.log("Looking for user with email:", email);
+      // Check if the user is an admin
+      if (email === process.env.ADMIN_EMAIL && password === process.env.ADMIN_PASSWORD) {
+         const token = jwt.sign(
+            { email, role: "admin" },
+            process.env.JWT_SECRET_KEY,
+            { expiresIn: "1d" }
+         );
+
+         res.cookie("accessToken", token, { httpOnly: true });
+         return res.json({ success: true, message: "Admin logged in successfully", role: "admin", token });
+      }
+
+      // Otherwise, check if the user is in the database
       const user = await User.findOne({ email });
 
       if (!user) {
@@ -156,8 +168,6 @@ export const login = async (req, res) => {
             message: "User not found!"
          });
       }
-
-      console.log("User found in DB:", user);
 
       // Verify password
       const checkCorrectPassword = await bcrypt.compare(password, user.password);
@@ -168,14 +178,19 @@ export const login = async (req, res) => {
          });
       }
 
-      // Destructure user object to exclude password
-      const { password: userPassword, role, ...rest } = user._doc;
+      // Generate token for user
+      const token = jwt.sign(
+         { id: user._id, role: "user" },
+         process.env.JWT_SECRET_KEY,
+         { expiresIn: "1d" }
+      );
 
-      // Send response without token
+      res.cookie("accessToken", token, { httpOnly: true });
       res.status(200).json({
          success: true,
-         user: { ...rest },
-         role
+         message: "User logged in successfully",
+         role: "user",
+         token
       });
 
    } catch (error) {

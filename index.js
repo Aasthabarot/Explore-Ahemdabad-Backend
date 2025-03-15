@@ -9,6 +9,8 @@ import reviewRoute from "./routes/reviews.js";
 import bookingRoute from "./routes/bookings.js";
 import placeRoute from "./routes/Place.js"; // Import Place Routes
 import galleryRoute from "./routes/galleryRoutes.js"; // Import Gallery Routes
+import AuthRoute from "./routes/auth.js"
+import PaymentRoute from "./routes/paymentRoutes.js"
 
 dotenv.config();
 
@@ -53,12 +55,16 @@ app.use(fileUpload()); // Added for gallery image uploads
 app.use("/uploads", express.static("uploads")); // Serve uploaded images
 
 // Routes
+app.use("/api/v1/auth", AuthRoute); // Updated Route
+
 app.use("/api/v1/packages", packageRoute); // Updated Route
 app.use("/api/v1/users", userRoute);
 app.use("/api/v1/review", reviewRoute);
 app.use("/api/v1/booking", bookingRoute);
 app.use("/api/v1/places", placeRoute); // Place API remains
 app.use("/api/v1/gallery", galleryRoute); // Added gallery route
+
+app.use("/api/v1/payments", PaymentRoute);
 
 // Start Server
 const startServer = async () => {

@@ -7,138 +7,194 @@ import { fileURLToPath } from 'url';
 const saveFile = (file, folder) => {
   const __dirname = path.dirname(fileURLToPath(import.meta.url));
   const uploadPath = path.join(__dirname, '..', 'uploads', folder);
+
+  // Ensure the directory exists
   if (!fs.existsSync(uploadPath)) {
     fs.mkdirSync(uploadPath, { recursive: true });
   }
+
+  // Validate file type (only allow images)
+  const allowedExtensions = ['.jpg', '.jpeg', '.png', '.gif'];
+  const fileExtension = path.extname(file.name).toLowerCase();
+  if (!allowedExtensions.includes(fileExtension)) {
+    throw new Error('Invalid file type. Only JPG, JPEG, PNG, and GIF files are allowed.');
+  }
+
+  // Generate a unique file name
   const fileName = `${Date.now()}_${file.name}`;
   const filePath = path.join(uploadPath, fileName);
+
+  // Move the file to the specified path
   file.mv(filePath, (err) => {
     if (err) {
       throw new Error('File upload failed');
     }
   });
+
   return `/uploads/${folder}/${fileName}`;
+};
+
+// Helper function to delete a file
+const deleteFile = (filePath) => {
+  const __dirname = path.dirname(fileURLToPath(import.meta.url));
+  const fullPath = path.join(__dirname, '..', filePath);
+  if (fs.existsSync(fullPath)) {
+    fs.unlinkSync(fullPath); // Delete the file
+  }
 };
 
 // Create new package
 export const createPackage = async (req, res) => {
   try {
-    const { packageTitle, packageDescription, tourHighlights, tourDetails } = req.body;
+    const {
+      packageTitle,
+      packageDescription,
+      tourHighlights,
+      tourDetails,
+      inclusions,
+      itinerary,
+    } = req.body;
 
-    // Parse itinerary JSON string into an array
-    const itinerary = JSON.parse(req.body.itinerary);
+    // Validate required fields
+    if (!packageTitle || !packageDescription || !tourHighlights || !tourDetails || !inclusions || !itinerary) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
 
-    // Handle package image upload
     let packageImagePath = '';
     if (req.files && req.files.packageImage) {
       packageImagePath = saveFile(req.files.packageImage, 'packages');
     }
 
-    // Handle itinerary images upload
-    const updatedItinerary = itinerary.map((place, index) => {
-      if (req.files && req.files[`placeImage_${index}`]) {
-        const placeImagePath = saveFile(req.files[`placeImage_${index}`], 'places');
-        return { ...place, image: placeImagePath };
-      }
-      return place;
-    });
-
     const newPackage = new Package({
       packageTitle,
       packageDescription,
       packageImage: packageImagePath,
-      tourHighlights: JSON.parse(tourHighlights), // Parse JSON string into array
-      tourDetails: JSON.parse(tourDetails), // Parse JSON string into object
-      itinerary: updatedItinerary,
+      tourHighlights,
+      tourDetails,
+      inclusions,
+      itinerary,
     });
 
     const savedPackage = await newPackage.save();
-    res.status(200).json({ success: true, message: 'Successfully created', data: savedPackage });
+    res.status(201).json({ success: true, message: 'Package created successfully', data: savedPackage });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to create. Try again!', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to create package', error: error.message });
   }
 };
 
 // Update package
 export const updatePackage = async (req, res) => {
   const id = req.params.id;
-
   try {
-    const { packageTitle, packageDescription, tourHighlights, tourDetails } = req.body;
+    const {
+      packageTitle,
+      packageDescription,
+      tourHighlights,
+      tourDetails,
+      inclusions,
+      itinerary,
+    } = req.body;
 
-    // Parse itinerary JSON string into an array
-    const itinerary = JSON.parse(req.body.itinerary);
+    // Validate required fields
+    if (!packageTitle || !packageDescription || !tourHighlights || !tourDetails || !inclusions || !itinerary) {
+      return res.status(400).json({ success: false, message: 'All fields are required' });
+    }
 
-    // Handle package image upload
     let packageImagePath = '';
     if (req.files && req.files.packageImage) {
       packageImagePath = saveFile(req.files.packageImage, 'packages');
-    }
 
-    // Handle itinerary images upload
-    const updatedItinerary = itinerary.map((place, index) => {
-      if (req.files && req.files[`placeImage_${index}`]) {
-        const placeImagePath = saveFile(req.files[`placeImage_${index}`], 'places');
-        return { ...place, image: placeImagePath };
+      // Delete the old image if it exists
+      const existingPackage = await Package.findById(id);
+      if (existingPackage && existingPackage.packageImage) {
+        deleteFile(existingPackage.packageImage);
       }
-      return place;
-    });
+    }
 
     const updatedPackage = await Package.findByIdAndUpdate(
       id,
       {
         packageTitle,
         packageDescription,
-        packageImage: packageImagePath,
-        tourHighlights: JSON.parse(tourHighlights), // Parse JSON string into array
-        tourDetails: JSON.parse(tourDetails), // Parse JSON string into object
-        itinerary: updatedItinerary,
+        packageImage: packageImagePath || undefined, // Keep existing image if no new one is uploaded
+        tourHighlights,
+        tourDetails,
+        inclusions,
+        itinerary,
       },
       { new: true }
     );
 
-    res.status(200).json({ success: true, message: 'Successfully updated', data: updatedPackage });
+    if (!updatedPackage) {
+      return res.status(404).json({ success: false, message: 'Package not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Package updated successfully', data: updatedPackage });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to update package', error: error.message });
   }
 };
 
 // Delete package
 export const deletePackage = async (req, res) => {
   const id = req.params.id;
-
   try {
-    await Package.findByIdAndDelete(id);
-    res.status(200).json({ success: true, message: 'Successfully deleted' });
+    const deletedPackage = await Package.findByIdAndDelete(id);
+
+    if (!deletedPackage) {
+      return res.status(404).json({ success: false, message: 'Package not found' });
+    }
+
+    // Delete the associated image file
+    if (deletedPackage.packageImage) {
+      deleteFile(deletedPackage.packageImage);
+    }
+
+    res.status(200).json({ success: true, message: 'Package deleted successfully' });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to delete', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to delete package', error: error.message });
   }
 };
 
 // Get single package
 export const getSinglePackage = async (req, res) => {
   const id = req.params.id;
-
   try {
     const packageData = await Package.findById(id);
-    res.status(200).json({ success: true, message: 'Successfully retrieved', data: packageData });
+
+    if (!packageData) {
+      return res.status(404).json({ success: false, message: 'Package not found' });
+    }
+
+    res.status(200).json({ success: true, message: 'Package retrieved successfully', data: packageData });
   } catch (error) {
-    res.status(404).json({ success: false, message: 'Not Found', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve package', error: error.message });
   }
 };
 
 // Get all packages with pagination
 export const getAllPackages = async (req, res) => {
   const page = parseInt(req.query.page) || 0;
+  const limit = parseInt(req.query.limit) || 8; // Allow customizable limit
 
   try {
     const packages = await Package.find({})
-      .skip(page * 8)
-      .limit(8);
+      .skip(page * limit)
+      .limit(limit);
 
-    res.status(200).json({ success: true, count: packages.length, message: 'Successfully retrieved', data: packages });
+    res.status(200).json({
+      success: true,
+      count: packages.length,
+      message: 'Packages retrieved successfully',
+      data: packages,
+    });
   } catch (error) {
-    res.status(404).json({ success: false, message: 'Not Found', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve packages', error: error.message });
   }
 };
 
@@ -150,13 +206,14 @@ export const getPackageBySearch = async (req, res) => {
 
   try {
     const packages = await Package.find({
-      packageName,
-      price: { $gte: minPrice, $lte: maxPrice },
+      packageTitle: packageName,
+      'tourDetails.standardPackageIndian': { $gte: minPrice, $lte: maxPrice },
     });
 
-    res.status(200).json({ success: true, message: 'Successfully retrieved', data: packages });
+    res.status(200).json({ success: true, message: 'Packages retrieved successfully', data: packages });
   } catch (error) {
-    res.status(404).json({ success: false, message: 'Not Found', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve packages', error: error.message });
   }
 };
 
@@ -164,9 +221,11 @@ export const getPackageBySearch = async (req, res) => {
 export const getFeaturedPackages = async (req, res) => {
   try {
     const packages = await Package.find({ featured: true }).limit(8);
-    res.status(200).json({ success: true, message: 'Successfully retrieved', data: packages });
+
+    res.status(200).json({ success: true, message: 'Featured packages retrieved successfully', data: packages });
   } catch (error) {
-    res.status(404).json({ success: false, message: 'Not Found', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to retrieve featured packages', error: error.message });
   }
 };
 
@@ -174,8 +233,10 @@ export const getFeaturedPackages = async (req, res) => {
 export const getPackageCount = async (req, res) => {
   try {
     const packageCount = await Package.estimatedDocumentCount();
+
     res.status(200).json({ success: true, data: packageCount });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to fetch', error: error.message });
+    console.error(error);
+    res.status(500).json({ success: false, message: 'Failed to fetch package count', error: error.message });
   }
 };
